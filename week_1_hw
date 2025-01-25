@@ -1,0 +1,110 @@
+Question 1. Understanding docker first run
+Run docker with the python:3.12.8 image in an interactive mode, use the entrypoint bash.
+
+What's the version of pip in the image?
+
+Answer:
+  docker run -it entry-point=bash python:3.12.8
+  pip --version
+
+Question 2. Understanding Docker networking and docker-compose
+Given the following docker-compose.yaml, what is the hostname and port that pgadmin should use to connect to the postgres database?
+Answer:
+  hostname: db
+  port: 5432 (same network inside docker-compose)
+
+Question 3. Trip Segmentation Count
+During the period of October 1st 2019 (inclusive) and November 1st 2019 (exclusive), how many trips, respectively, happened:
+
+Up to 1 mile
+In between 1 (exclusive) and 3 miles (inclusive),
+In between 3 (exclusive) and 7 miles (inclusive),
+In between 7 (exclusive) and 10 miles (inclusive),
+Over 10 miles
+
+Answer:
+SELECT 
+    CASE 
+        WHEN trip_distance <= 1 THEN '1'
+        WHEN trip_distance <= 3 THEN '1-3'
+        WHEN trip_distance <= 7 THEN '3-7'
+        WHEN trip_distance <= 10 THEN '7-10'
+        ELSE '10+'
+    END AS distance_converted,
+    COUNT(*) AS trip_count
+FROM green_taxi_trips
+GROUP BY 
+    CASE 
+        WHEN trip_distance <= 1 THEN '1'
+        WHEN trip_distance <= 3 THEN '1-3'
+        WHEN trip_distance <= 7 THEN '3-7'
+        WHEN trip_distance <= 10 THEN '7-10'
+        ELSE '10+'
+    END
+ORDER BY distance_converted;
+
+Question 4. Longest trip for each day
+Which was the pick up day with the longest trip distance? Use the pick up time for your calculations.
+Answer: 
+    SELECT 
+      DATE(lpep_pickup_datetime) AS truncated_date,
+      max(trip_distance) AS trip_distance
+    FROM green_taxi_trips
+    GROUP BY DATE(lpep_pickup_datetime)
+ORDER BY trip_distance desc;
+
+Question 5. Three biggest pickup zones
+Which were the top pickup locations with over 13,000 in total_amount (across all trips) for 2019-10-18?
+
+Consider only lpep_pickup_datetime when filtering by date.
+Answer: 
+
+
+with x as (
+select t."total_amount", zpu."Zone" from green_taxi_trips t
+LEFT JOIN
+zones zpu ON t."PULocationID" = zpu."LocationID"
+
+where cast(t."lpep_pickup_datetime" as date) = '2019-10-18')
+
+select x."Zone", sum(x."total_amount") as cc
+from x
+group by x."Zone"
+having sum(x."total_amount") > 13000
+order by cc desc
+;
+
+
+
+Question 6. Largest tip
+For the passengers picked up in October 2019 in the zone named "East Harlem North" which was the drop off zone that had the largest tip?
+Answer:
+with x as (
+select t."tip_amount", zdo."Zone" from green_taxi_trips t
+LEFT JOIN
+zones zpu ON t."PULocationID" = zpu."LocationID"
+LEFT JOIN
+    zones zdo ON t."DOLocationID" = zdo."LocationID"
+
+where zpu."Zone" = 'East Harlem North')
+
+select x."Zone", sum(x."tip_amount") as cc
+from x
+group by x."Zone"
+order by cc desc
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
