@@ -1,0 +1,10 @@
+Q1: yellow_tripdata_2020-12.csv 128.3 MB
+Q2: green_tripdata_2020-04.csv
+Q3: SELECT count(1) FROM `terraform-demo-448901.zoomcamp.yellow_tripdata` WHERE filename like '%2020%'
+Q4: SELECT count(1) FROM `terraform-demo-448901.zoomcamp.green_tripdata` WHERE filename like '%2020%'
+Q5: SELECT count(1) FROM `terraform-demo-448901.zoomcamp.yellow_tripdata` WHERE filename like '%2021-03%'
+Q6: In the doc it says following:
+All JVM options can be passed in an environment variable named JAVA_OPTS. You can use it to change all JVM options available, such as memory, encoding, etc.
+Example:
+shell
+export JAVA_OPTS="-user.timezone=Europe/Paris"
