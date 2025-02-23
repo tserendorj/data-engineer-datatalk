@@ -1,0 +1,26 @@
+Question 5:
+
+WITH revenue_data AS (
+    SELECT 
+        DATE_TRUNC(revenue_quarter, QUARTER) AS quarter,
+        SUM(revenue_quarterly_total_amount) AS total_revenue
+    FROM `terraform-demo-448901.dbt_tserendorj.fct_taxi_trips_quarterly_revenue`
+    where service_type = 'Yellow' -- 'Green'
+    GROUP BY quarter
+),
+revenue_with_lag AS (
+    SELECT 
+        quarter,
+        total_revenue,
+        LAG(total_revenue, 4) OVER (ORDER BY quarter) AS revenue_last_year
+    FROM revenue_data
+)
+SELECT 
+    quarter,
+    
+    total_revenue,
+    revenue_last_year,
+    ROUND(SAFE_DIVIDE(total_revenue - revenue_last_year, revenue_last_year) * 100, 2) AS yoy_growth
+FROM revenue_with_lag
+WHERE revenue_last_year IS NOT NULL and EXTRACT(YEAR FROM TIMESTAMP(quarter)) = 2020
+ORDER BY quarter;
