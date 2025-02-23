@@ -1,71 +1,3 @@
-## Preparation for dataset
-
-{{
-    config(
-        materialized='view'
-    )
-}}
-
-select
-
-    dispatching_base_num,    
-    cast(pickup_datetime as timestamp) as pickup_datetime,
-    cast(dropoff_datetime as timestamp) as dropoff_datetime,
-    
-    cast(PULocationID as integer ) as pickup_locationid,
-    cast(DOLocationID as integer )  as dropoff_locationid,
-
-    
-    sr_flag
-    
-from {{ source('staging','fhv_tripdata') }}
-
-
--- dbt build --select <model_name> --vars '{'is_test_run': 'false'}'
-{% if var('is_test_run', default=true) %}
-
-  limit 100
-
-{% endif %}
-
-=========
-
-{{
-    config(
-        materialized='table'
-    )
-}}
-
-with fhv_data as (
-    select *,
-        'Fhv' as service_type
-    from {{ ref('stg_fhv_tripdata') }}
-),
-
-dim_zones as (
-    select * from {{ ref('dim_zones') }}
-    where borough != 'Unknown'
-)
-select 
-    fhv_data.dispatching_base_num,
-    fhv_data.service_type,
-    fhv_data.pickup_locationid,
-    pickup_zone.borough as pickup_borough,
-    pickup_zone.zone as pickup_zone,
-    fhv_data.dropoff_locationid,
-    dropoff_zone.borough as dropoff_borough,
-    dropoff_zone.zone as dropoff_zone,
-    fhv_data.pickup_datetime,
-    fhv_data.dropoff_datetime,
-    fhv_data.sr_flag
-from fhv_data
-inner join dim_zones as pickup_zone
-on fhv_data.pickup_locationid = pickup_zone.locationid
-inner join dim_zones as dropoff_zone
-on fhv_data.dropoff_locationid = dropoff_zone.locationid
-
-
-
 
 ## Question 5:
 
@@ -125,3 +57,90 @@ SELECT
 FROM revenue_with_lag
 WHERE revenue_last_year IS NOT NULL and EXTRACT(YEAR FROM TIMESTAMP(quarter)) = 2020
 ORDER BY quarter;
+
+
+## Question 6
+{{ config(materialized='table') }}
+
+with trips_data as (
+    select * from {{ ref('fact_trips') }}
+    where fare_amount > 0 and trip_distance > 0 and payment_type_description in ('Cash', 'Credit Card')
+)
+    select 
+    -- Revenue grouping 
+    pickup_zone as revenue_zone,
+    {{ dbt.date_trunc("month", "pickup_datetime") }} as revenue_month, 
+
+    service_type, 
+
+    -- Revenue calculation 
+    sum(fare_amount) as revenue_monthly_fare
+
+    from trips_data
+    group by 1,2,3
+
+## Question 7
+
+{{
+    config(
+        materialized='view'
+    )
+}}
+
+select
+
+    dispatching_base_num,    
+    cast(pickup_datetime as timestamp) as pickup_datetime,
+    cast(dropoff_datetime as timestamp) as dropoff_datetime,
+    
+    cast(PULocationID as integer ) as pickup_locationid,
+    cast(DOLocationID as integer )  as dropoff_locationid,
+
+    
+    sr_flag
+    
+from {{ source('staging','fhv_tripdata') }}
+where dispatching_base_num is not null
+
+-- dbt build --select <model_name> --vars '{'is_test_run': 'false'}'
+{% if var('is_test_run', default=true) %}
+
+  limit 100
+
+{% endif %}
+
+=========
+
+{{
+    config(
+        materialized='table'
+    )
+}}
+
+with fhv_data as (
+    select *,
+        'Fhv' as service_type
+    from {{ ref('stg_fhv_tripdata') }}
+),
+
+dim_zones as (
+    select * from {{ ref('dim_zones') }}
+    where borough != 'Unknown'
+)
+select 
+    fhv_data.dispatching_base_num,
+    fhv_data.service_type,
+    fhv_data.pickup_locationid,
+    pickup_zone.borough as pickup_borough,
+    pickup_zone.zone as pickup_zone,
+    fhv_data.dropoff_locationid,
+    dropoff_zone.borough as dropoff_borough,
+    dropoff_zone.zone as dropoff_zone,
+    fhv_data.pickup_datetime,
+    fhv_data.dropoff_datetime,
+    fhv_data.sr_flag
+from fhv_data
+inner join dim_zones as pickup_zone
+on fhv_data.pickup_locationid = pickup_zone.locationid
+inner join dim_zones as dropoff_zone
+on fhv_data.dropoff_locationid = dropoff_zone.locationid
