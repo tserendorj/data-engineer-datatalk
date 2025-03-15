@@ -1,0 +1,17 @@
+Q1
+rpk --version
+rpk version v24.2.18 (rev f9a22d4430)
+
+Q2
+rpk topic create green_trips
+TOPIC        STATUS
+green_trips  OK
+
+Q3
+True
+
+Q4
+23
+
+Q5
+9
